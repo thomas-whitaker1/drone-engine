@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.vite/
+*.local
+
+# What the measuring harness leaves behind — see tools/perf/README.md.
+tools/perf/out/
