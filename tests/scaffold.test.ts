@@ -17,7 +17,35 @@ describe('scaffold', () => {
     // shell asks for is something the wake screen has to wait for. The
     // typefaces are in the repo now (gt#94) and src/fonts.ts declares them from
     // script; tests/fonts.test.ts holds the rest of that bargain.
-    expect(read('index.html')).not.toMatch(/https?:\/\//);
+    //
+    // The share card's two addresses (gt#121) are the exception, because a
+    // `<meta>` names an address without the page fetching it. They are taken
+    // out first, by their exact shape, so an address anywhere else still fails.
+    const named = /<meta property="og:(?:url|image)" content="https:\/\/[^"]+" \/>/g;
+    const html = read('index.html');
+    expect(html.match(named)).toHaveLength(2);
+    expect(html.replace(named, '')).not.toMatch(/https?:\/\//);
+  });
+
+  it('shows a card where it is shared, and the card ships with the board', () => {
+    const html = read('index.html');
+    const meta = (property: string) =>
+      new RegExp(`<meta\\s+property="${property}"\\s+content="([^"]+)"`, 's').exec(html)?.[1] ?? '';
+    const description = /<meta\s+name="description"\s+content="([^"]+)"/s.exec(html)?.[1];
+
+    // The image sits beside the page it advertises, so wherever the board is
+    // hosted, its card is hosted with it.
+    expect(meta('og:image')).toBe(`${meta('og:url')}card.png`);
+    expect(meta('og:description')).toBe(description);
+    expect(html).toContain('<meta name="twitter:card" content="summary_large_image" />');
+
+    // A PNG of the size the tags declare: width and height are at bytes 16–23.
+    const png = readFileSync(root + 'public/card.png');
+    expect(png.subarray(1, 4).toString('latin1')).toBe('PNG');
+    expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([
+      Number(meta('og:image:width')),
+      Number(meta('og:image:height')),
+    ]);
   });
 
   it('opens on the page background the design calls for', () => {

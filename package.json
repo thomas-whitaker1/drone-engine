@@ -6,7 +6,7 @@
   "description": "A procedural drone-metal generator styled as a scavenged control board.",
   "license": "MIT",
   "author": "Thomas Whitaker <thomas@thomasw.cool>",
-  "homepage": "https://github.com/thomas-whitaker1/drone-engine#readme",
+  "homepage": "https://thomasw.cool/play/drone-engine/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thomas-whitaker1/drone-engine.git"

@@ -184,8 +184,10 @@ describe('the declaration', () => {
     // A stylesheet written into the shell blocks rendering until it answers.
     // A `<style>` a script appends blocks nothing — so the shell stays empty of
     // fonts and addresses, and the faces arrive this way instead.
+    // The share card's tags name addresses without fetching them (gt#121);
+    // tests/scaffold.test.ts holds the shell to those two and no others.
     const shell = readFileSync(root + 'index.html', 'utf8');
-    expect(shell).not.toMatch(/https?:\/\//);
+    expect(shell).not.toMatch(/(?:src|href)="https?:\/\//);
     expect(shell).not.toContain('@font-face');
     expect(shell).not.toMatch(/<link[^>]+stylesheet/);
 

@@ -7,6 +7,9 @@ doom builds itself.
 It is for people who are not musicians. There is one root note, nothing has to be in
 time with anything, and no combination of settings sounds wrong. Only heavier.
 
+**[Play it in your browser](https://thomasw.cool/play/drone-engine/)** — turn your
+volume down first, and read the warning below.
+
 ![The board with every module switched on](docs/board.png)
 
 > [!WARNING]
