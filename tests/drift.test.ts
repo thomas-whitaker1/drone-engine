@@ -130,16 +130,26 @@ describe('the envelope', () => {
   it('never carries a value further from its centre than the ceiling allows', () => {
     // The rule the whole feature turns on: a value that wandered across its range
     // is a value the user no longer set.
+    //
+    // Every combination is still walked, but the furthest any of them got past
+    // its ceiling is asserted once rather than each one separately. It is
+    // several hundred thousand cases, and an assertion apiece took longer than
+    // a test is allowed on a slow machine while checking nothing more.
+    let worst = { past: -Infinity, where: 'nothing was walked' };
     for (const base of [0, 0.2, 0.5, 0.8, 1]) {
       for (const amount of [0, 0.25, 0.5, 1]) {
         for (let seconds = 0; seconds <= 400; seconds += 0.5) {
           for (const index of indices) {
             const moved = driftValue(base, index, seconds, amount);
-            expect(Math.abs(moved - base)).toBeLessThanOrEqual(driftReach(amount) * DRIFT.envelope + 1e-12);
+            const past = Math.abs(moved - base) - driftReach(amount) * DRIFT.envelope;
+            if (past > worst.past) {
+              worst = { past, where: `base ${base}, amount ${amount}, ${seconds}s in, control ${index}` };
+            }
           }
         }
       }
     }
+    expect(worst.past, worst.where).toBeLessThanOrEqual(1e-12);
   });
 
   it('stays inside the range a control actually has', () => {

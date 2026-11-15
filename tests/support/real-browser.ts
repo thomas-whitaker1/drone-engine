@@ -22,6 +22,9 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 /** A blank page on the dev server's origin, so modules can be imported from it. */
 const BLANK = '/__offline';
 
+/** How long the blank page is given to load before the harness gives up on it. */
+const ARRIVE_MS = 30_000;
+
 /**
  * A Chrome or Chromium to render in, or null. `CHROME_PATH` wins; after that
  * the usual places for the platform. Null is not an error: a machine with no
@@ -183,6 +186,25 @@ export async function openRealPage(chromePath: string): Promise<RealPage> {
       flatten: true,
     });
     await browser.send('Runtime.enable', {}, sessionId);
+
+    // The tab is created already on its way to the blank page, and nothing says
+    // when it has arrived. A call that lands first runs in `about:blank`, where
+    // a path like '/tests/…' has nothing to resolve against — every call fails
+    // at once with "Failed to resolve module specifier", which is what a slow
+    // machine did. So the page is not handed back until it is on the server.
+    const arrive = Date.now() + ARRIVE_MS;
+    for (;;) {
+      const reply = await browser.send<{ result: { value?: string } }>(
+        'Runtime.evaluate',
+        { expression: 'location.origin + " " + document.readyState', returnByValue: true },
+        sessionId,
+      );
+      if (reply.result.value === `${origin} complete`) break;
+      if (Date.now() > arrive) {
+        throw new Error(`The blank page never loaded: still at "${reply.result.value}" after ${ARRIVE_MS}ms.`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
 
     return {
       async call<T>(module: string, name: string, ...args: unknown[]): Promise<T> {
