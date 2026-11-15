@@ -172,8 +172,18 @@ export async function openRealPage(chromePath: string): Promise<RealPage> {
       await Promise.race([gone, new Promise((resolve) => setTimeout(resolve, 5000))]);
     }
     await server.close();
-    // The profile is still being let go of for a moment after the process ends.
-    rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+    // The profile is still being let go of for a moment after the process ends:
+    // killing the browser does not wait for its helper processes, and one of
+    // them can still be writing here. So the delete is retried — and if it
+    // still cannot be done, that is left alone rather than thrown. Every test
+    // has passed by now; a throwaway folder in the system's temp directory is
+    // the system's to clean up, and must not fail a suite that found nothing
+    // wrong. (It did, once, on a Linux runner: ENOTEMPTY on `Default`.)
+    try {
+      rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+    } catch {
+      // Left for the system.
+    }
   };
 
   try {
